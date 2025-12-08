@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Golden Paradox Challenge</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --accent: #fbbf24;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(800px 400px at 50% 0%, #111827, var(--bg));
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .container { max-width: 800px; margin: 40px auto; padding: 24px; }
+    h1, h2 { margin: 0 0 12px; color: var(--accent); }
+    .anthem { color: var(--muted); line-height: 1.6; }
+    .button, button {
+      background: var(--accent);
+      color: #1f2937;
+      border: none; border-radius: 8px;
+      padding: 12px 16px; font-weight: 700; cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .button:hover, button:hover { opacity: 0.9; }
+    .button:disabled, button:disabled { opacity: 0.5; cursor: not-allowed; }
+    .button.secondary, .secondary { background: #334155; color: var(--text); }
+    .hidden { display: none; }
+
+    .hud { display: flex; gap: 24px; margin: 16px 0; flex-wrap: wrap; }
+    .cards { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); 
+      gap: 12px; 
+      margin: 16px 0 24px; 
+    }
+    .card {
+      background: var(--card);
+      border: 2px solid #334155; 
+      border-radius: 10px;
+      padding: 16px; 
+      text-align: center; 
+      min-height: 90px; 
+      display: flex; 
+      flex-direction: column;
+      align-items: center; 
+      justify-content: center;
+      cursor: pointer; 
+      transition: transform 120ms ease, border-color 120ms ease;
+      font-size: 1.2rem;
+    }
+    .card:hover:not(.revealed) { transform: translateY(-2px); border-color: var(--accent); }
+    .card.revealed { border-color: var(--accent); color: var(--accent); font-weight: 800; cursor: default; }
+    .card.revealed .effect { font-size: 0.8rem; color: var(--muted); margin-top: 4px; }
+    .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+    .cta { display: flex; gap: 12px; margin: 12px 0 24px; flex-wrap: wrap; }
+
+    .signup-banner {
+      background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+      border: 2px solid var(--accent);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 24px 0;
+      text-align: center;
+    }
+
+    .signup-banner p {
+      margin: 0 0 12px;
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.5;
+    }
+
+    .signup-banner .button {
+      display: inline-block;
+      text-decoration: none;
+      margin: 0;
+    }
+
+    @media (max-width: 600px) {
+      .cards { grid-template-columns: repeat(3, 1fr); }
+      .container { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="container">
+<section id="start">
+  <h1>Golden Paradox Challenge</h1>
+  <p class="anthem">
+    Hold the gold,<br />
+    Or let it go.<br />
+    Win or lose,<br />
+    The game will show.
+  </p>
+<!-- Sign-up banner -->
+<div class="signup-banner">
+  <p>🏆 Sign up to compete for weekly prizes! Dinner for Two awaits the champion.</p>
+  <a href="https://docs.google.com/forms/d/e/1FAIpQLSdEZd7UFlivxIDzQ35eC2849wiQS4U0-SXtvCBCQdqdJtpOqw/viewform" target="_blank" class="button secondary">Sign Up</a>
+</div>
+  
+  <button id="playBtn">Play Now</button>
+</section>
+
+    <section id="game" class="hidden">
+      <div class="hud">
+        <div><strong>Score:</strong> <span id="score">0</span></div>
+        <div><strong>Flips left:</strong> <span id="flips">5</span></div>
+      </div>
+      <div class="cards" id="cards"></div>
+      <div class="actions">
+        <button id="holdBtn">Hold (End Round)</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+      </div>
+    </section>
+
+    <section id="win" class="hidden">
+      <h2>Golden Paradox Champion (Round Complete)</h2>
+      <p class="anthem">Rise or fall, the choice is yours—Give today, open new doors.</p>
+      <p><strong>Your score:</strong> <span id="finalScore">0</span></p>
+      <div class="cta">
+        <a id="donateLink" class="button" href="#" target="_blank">Donate</a>
+        <a id="submitLink" class="button secondary" href="#" target="_blank">Submit Score</a>
+      </div>
+      <button id="playAgainBtn">Play Again</button>
+    </section>
+  </main>
+
+  <script>
+    const playBtn = document.getElementById('playBtn');
+    const holdBtn = document.getElementById('holdBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const playAgainBtn = document.getElementById('playAgainBtn');
+
+    const start = document.getElementById('start');
+    const game = document.getElementById('game');
+    const win = document.getElementById('win');
+
+    const scoreEl = document.getElementById('score');
+    const flipsEl = document.getElementById('flips');
+    const cardsEl = document.getElementById('cards');
+    const finalScoreEl = document.getElementById('finalScore');
+
+    const donateLink = document.getElementById('donateLink');
+    const submitLink = document.getElementById('submitLink');
+
+    // Donation and submission links
+    donateLink.href = 'https://donate.goodstack.io/links/dl_cee39710-6706-41c1-8050-f61ddc0431b7?organisationId=organisation_000000CvVfu2eiXDLcOG3BvE7IY6j';
+    submitLink.href = 'https://docs.google.com/forms/d/e/1FAIpQLSdEZd7UFlivxIDzQ35eC2849wiQS4U0-SXtvCBCQdqdJtpOqw/viewform';
+    
+    let score = 0;
+    let flipsLeft = 5;
+    let deck = [];
+
+    function buildDeck() {
+      // Values: numbers (2-10), face cards (J/Q/K double), Joker (halve score)
+      const nums = [2,3,4,5,6,7,8,9,10];
+      const faces = ['J','Q','K'];
+      const specials = ['Joker'];
+      deck = [...nums, ...faces, ...nums, ...faces, ...specials];
+      shuffle(deck);
+    }
+
+    function shuffle(a) {
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+    }
+
+    function renderCards() {
+      cardsEl.innerHTML = '';
+      for (let i = 0; i < 5; i++) {
+        const card = document.createElement('button');
+        card.className = 'card';
+        card.textContent = 'Flip';
+        card.addEventListener('click', () => flipCard(card));
+        cardsEl.appendChild(card);
+      }
+    }
+
+    function flipCard(cardEl) {
+      if (flipsLeft <= 0 || cardEl.classList.contains('revealed')) return;
+      
+      // Check if deck has cards
+      if (deck.length === 0) {
+        console.error('Deck is empty!');
+        return;
+      }
+
+      const draw = deck.pop();
+      cardEl.classList.add('revealed');
+      
+      let effectText = '';
+
+      if (typeof draw === 'number') {
+        score += draw;
+        effectText = `+${draw}`;
+      } else if (['J','Q','K'].includes(draw)) {
+        score *= 2;
+        if (score === 0) {
+          score = 10;
+          effectText = '+10';
+        } else {
+          effectText = '×2';
+        }
+      } else if (draw === 'Joker') {
+        score = Math.floor(score / 2);
+        effectText = '÷2';
+      }
+
+      cardEl.innerHTML = `<div>${draw}</div><div class="effect">${effectText}</div>`;
+
+      flipsLeft -= 1;
+      updateHUD();
+
+      // Enable hold button once score > 0
+      if (score > 0) {
+        holdBtn.disabled = false;
+      }
+
+      if (flipsLeft === 0) {
+        setTimeout(endRound, 500);
+      }
+    }
+
+    function updateHUD() {
+      scoreEl.textContent = score;
+      flipsEl.textContent = flipsLeft;
+    }
+
+    function startGame() {
+      score = 0;
+      flipsLeft = 5;
+      buildDeck();
+      renderCards();
+      updateHUD();
+      holdBtn.disabled = true;
+      start.classList.add('hidden');
+      win.classList.add('hidden');
+      game.classList.remove('hidden');
+    }
+
+    function endRound() {
+      finalScoreEl.textContent = score;
+      game.classList.add('hidden');
+      win.classList.remove('hidden');
+    }
+
+    function holdNow() {
+      endRound();
+    }
+
+    function resetGame() {
+      start.classList.remove('hidden');
+      game.classList.add('hidden');
+      win.classList.add('hidden');
+    }
+
+    playBtn.addEventListener('click', startGame);
+    holdBtn.addEventListener('click', holdNow);
+    resetBtn.addEventListener('click', resetGame);
+    playAgainBtn.addEventListener('click', startGame);
+  </script>
+</body>
+</html>
