@@ -249,11 +249,23 @@
       game.classList.remove('hidden');
     }
 
+    function encodeScore(score) {
+    const secret = 'HFPC2025';
+    const timestamp = Date.now();
+    const combined = score + secret + timestamp;
+    let hash = 0;
+    for (let i = 0; i < combined.length; i++) {
+        hash = ((hash << 5) - hash) + combined.charCodeAt(i);
+        hash = hash & hash;
+    }
+    return Math.abs(hash).toString(36) + '_' + score + '_' + timestamp;
+}
+
     function endRound() {
       finalScoreEl.textContent = score;
       game.classList.add('hidden');
       win.classList.remove('hidden');
-     document.getElementById('submitScoreLink').href = `https://docs.google.com/forms/d/e/1FAIpQLSdEZd7UFlivxIDzQ35eC2849wiQS4U0-SXtvCBCQdqdJtpOqw/viewform?usp=pp_url&entry.1480329000=${score}`;
+     document.getElementById('submitScoreLink').href = `https://docs.google.com/forms/d/e/1FAIpQLSdEZd7UFlivxIDzQ35eC2849wiQS4U0-SXtvCBCQdqdJtpOqw/viewform?usp=pp_url&entry.1480329000=${encodeScore(score)}
     }
 
     function holdNow() {
