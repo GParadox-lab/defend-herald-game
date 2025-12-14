@@ -267,6 +267,7 @@
       win.classList.remove('hidden');
       console.log('Score:', score, 'Encoded:', encodeScore(score));
      document.getElementById('submitLink').href = `https://docs.google.com/forms/d/e/1FAIpQLSdEZd7UFlivxIDzQ35eC2849wiQS4U0-SXtvCBCQdqdJtpOqw/viewform?usp=pp_url&entry.1480329000=${encodeScore(score)};`
+      console.log('Updated href:', document.getElementById('submitLink').href);
      }
 
     function holdNow() {
